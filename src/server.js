@@ -2,7 +2,6 @@ const express = require('express');
 const app = express();
 const dotenv = require('dotenv');
 const routes = require('./routes/api/api');
-//F:\app_thu_phi\be\src\config\connection.js
 const {poolPromise} = require('./config/connection');
 const cors = require('cors');
 const bodyParser = require('body-parser');

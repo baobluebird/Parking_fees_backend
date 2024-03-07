@@ -289,6 +289,18 @@ const checkTokenEmail = async (req, res) => {
     }
 }
 
+const getId = async (req, res) => {
+    try {
+        const token = req.headers.token.split(' ')[0]
+        const response = await UserService.getId(token)
+        return res.status(200).json(response)
+    } catch (e) {
+        return res.status(404).json({
+            message: e
+        })
+    }
+}
+
 module.exports = {
     createUser,
     loginUser,
@@ -304,5 +316,6 @@ module.exports = {
     createCode,
     checkCode,
     createTokenEmail,
-    checkTokenEmail
+    checkTokenEmail,
+    getId
 }
