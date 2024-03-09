@@ -93,7 +93,7 @@ const updateUser = async (req, res) => {
 const changePassword = async (req, res) => {
     try {
         const userId = req.params.id;
-        const {password} = req.body;
+        const password = req.body;
         if(!userId || !password){
             return res.status(200).json({
                 status: 'ERR',
@@ -141,7 +141,6 @@ const getAllUser = async (req, res) => {
 const getDetailsUser = async (req, res) => {
     try {
         const userId = req.params.id;
-
         if(!userId){
             return res.status(200).json({
                 status: 'ERR',
@@ -216,90 +215,9 @@ const deleteMany = async (req, res) => {
     }
 }
 
-const createCode = async (req, res) => {
-    try {
-        const email = req.body.email
-        if(!email){
-            return res.status(200).json({
-                status: 'ERR',
-                message: 'The email is required'
-            })
-        }
-        const response = await UserService.createCode(email)
-        return res.status(200).json(response)
-    } catch (e) {
-        return res.status(404).json({
-            message: e
-        })
-    }
-}
 
-const checkCode = async (req, res) => {
-    try {
-        const id = req.params.id
-        const {code} = req.body
-        if( !id || !code){
-            return res.status(200).json({
-                status: 'ERR',
-                message: 'The input is required'
-            })
-        }
-        const response = await UserService.checkCode(id, code)
-        return res.status(200).json(response)
-    } catch (e) {
-        return res.status(404).json({
-            message: e
-        })
-    }
-}
 
-const createTokenEmail = async (req, res) => {
-    try {
-        const {email} = req.body
-        if(!email){
-            return res.status(200).json({
-                status: 'ERR',
-                message: 'The email is required'
-            })
-        }
-        const response = await UserService.createTokenEmail(email)
-        return res.status(200).json(response)
-    } catch (e) {
-        return res.status(404).json({
-            message: e
-        })
-    }
-}
 
-const checkTokenEmail = async (req, res) => {
-    try {
-        const token = req.params.id
-        if(!token){
-            return res.status(200).json({
-                status: 'ERR',
-                message: 'The input is required'
-            })
-        }
-        const response = await UserService.checkTokenEmail(token,res)
-        return res.status(200).json(response)
-    } catch (e) {
-        return res.status(404).json({
-            message: e
-        })
-    }
-}
-
-const getId = async (req, res) => {
-    try {
-        const token = req.headers.token.split(' ')[0]
-        const response = await UserService.getId(token)
-        return res.status(200).json(response)
-    } catch (e) {
-        return res.status(404).json({
-            message: e
-        })
-    }
-}
 
 module.exports = {
     createUser,
@@ -313,9 +231,4 @@ module.exports = {
     refreshToken,
     deleteMany,
     getDetailsUserWithCart,
-    createCode,
-    checkCode,
-    createTokenEmail,
-    checkTokenEmail,
-    getId
 }

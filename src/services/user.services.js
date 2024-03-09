@@ -8,7 +8,6 @@ const jwt = require('jsonwebtoken');
 const createUser = async (user) => {
     return new Promise(async (resolve, reject) => {
     try {
-        user.id = crypto.randomBytes(16).toString('hex')
         user.password = bcrypt.hashSync(user.password, 10)
         const response = await User.createUser(user)
         if (!response) {
@@ -17,10 +16,10 @@ const createUser = async (user) => {
                 message: 'Create user failed'
             })
         }
-        else if (response === 'Email is already in use by another user') {
+        else if (response === 'Email is already in use') {
             reject ({
                 status: 'ERR',
-                message: 'Email is already in use by another user'
+                message: 'Email is already in use'
             })
         }
         else {
@@ -135,9 +134,74 @@ const updateUser = async (userId, data) => {
     });
   };
 
+const getDetailsUser = async (userId) => {
+    return new Promise(async (resolve, reject) => {
+    try {
+        const response = await User.getDetailsUser(userId)
+        if (!response) {
+            reject ({
+                status: 'ERR',
+                message: 'Get user failed'
+            })
+        }
+        else {
+            resolve({
+                user: response,
+                status: 'OK',
+                message: 'Get user successfully'
+            })
+        }
+    } catch (error) {
+        reject(error);
+      }
+    });
+  };
+
+const changePassword = async (userId, password) => {
+    return new Promise(async (resolve, reject) => {
+    try {
+        const response = await User.changePassword(userId, password)
+        if (!response) {
+            reject ({
+                status: 'ERR',
+                message: 'Change password failed'
+            })
+        }
+        else if(response === 'User not found') {
+            reject ({
+                status: 'ERR',
+                message: 'User not found'
+            })
+        }
+        else if(response === 'Old password is incorrect'){
+            reject ({
+                status: 'ERR',
+                message: 'Old password is incorrect'
+            })
+        }
+        else if(response === 'New password must be different from the old password') {
+            reject ({
+                status: 'ERR',
+                message: 'New password must be different from the old password'
+            })
+        }
+        else {
+            resolve({
+                status: 'OK',
+                message: 'Change password successfully'
+            })
+        }
+    } catch (error) {
+        reject(error);
+      }
+    });
+  };
+
 module.exports = {
     createUser,
     loginUser,
     getId,
-    updateUser
+    updateUser,
+    getDetailsUser,
+    changePassword
 }

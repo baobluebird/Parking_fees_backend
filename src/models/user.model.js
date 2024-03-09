@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt');
 
 const createUser = async (data) => {
     try {
-        if (!data || typeof data !== 'object' || !data.id || !data.name || !data.password || !data.email || !data.address || !data.phone) {
+        if (!data || typeof data !== 'object' || !data.name || !data.password || !data.email || !data.address || !data.phone) {
             throw new Error('Invalid data object or missing properties');
         }
 
@@ -23,21 +23,30 @@ const createUser = async (data) => {
         }
 
         const request = pool.request();
-        request.input('UserId', data.id);
         request.input('Username', data.name);
         request.input('Password', data.password);
         request.input('Email', data.email);
         request.input('Address', data.address);
         request.input('Phone', data.phone);
 
-        const result = await request.query(`
-            INSERT INTO Users (UserId,Username, Email, Phone, Address, Password)
-            OUTPUT inserted.UserId, inserted.Username, inserted.Email, inserted.Phone, inserted.Address, inserted.IsAdmin
-            VALUES (@UserId, @Username, @Email, @Phone, @Address, @Password)
+        // Thực hiện câu lệnh INSERT
+        await request.query(`
+            INSERT INTO Users (Username, Email, Phone, Address, Password)
+            VALUES (@Username, @Email, @Phone, @Address, @Password)
         `);
 
-        if (result.recordset.length > 0) {
-            return result.recordset[0]; // Return the first row (user information)
+        // Sau khi thêm, thực hiện truy vấn để lấy thông tin vừa thêm vào
+        const getUserQuery = `
+            SELECT Username, Email, Phone, Address, IsAdmin
+            FROM Users
+            WHERE Email = @Email
+        `;
+        const getUserRequest = pool.request();
+        getUserRequest.input('Email', data.email);
+        const userResult = await getUserRequest.query(getUserQuery);
+
+        if (userResult.recordset.length > 0) {
+            return userResult.recordset[0]; // Return the first row (user information)
         } else {
             throw new Error('User creation failed'); // Or handle this case as needed
         }
@@ -46,6 +55,7 @@ const createUser = async (data) => {
         throw error;
     }
 }
+
 
 
 const loginUser = async (data) => {
@@ -166,8 +176,81 @@ const updateUser = async (id, data) => {
     }
 }
 
+const getDetailsUser = async (id) => {
+    try {
+        if (!id) {
+            throw new Error('Invalid user ID');
+        }
 
+        const pool = await poolPromise;
+        const request = pool.request();
+        request.input('UserId', id);
 
+        const result = await request.query(`
+            SELECT UserId, Username, Email, Phone, Address, IsAdmin
+            FROM Users
+            WHERE UserId = @UserId
+        `);
+
+        if (result.recordset.length > 0) {
+            return result.recordset[0];
+        } else {
+            return 'User not found';
+        }
+    } catch (error) {
+        console.error('Error getting user details:', error);
+        throw error;
+    }
+}
+
+const changePassword = async (id, data) => {
+    try {
+        if (!id || !data || typeof data !== 'object' || !data.oldPassword || !data.newPassword) {
+            throw new Error('Invalid data object or missing properties');
+        }
+
+        const pool = await poolPromise;
+        const request = pool.request();
+        request.input('UserId', id);
+
+        const result = await request.query(`
+            SELECT Password
+            FROM Users
+            WHERE UserId = @UserId
+        `);
+
+        if (result.recordset.length > 0) {
+            const user = result.recordset[0];
+            const passwordMatch = await bcrypt.compare(data.oldPassword, user.Password);
+            if (passwordMatch===true) {
+                if(data.oldPassword === data.newPassword){
+                    return 'New password must be different from the old password';
+                }
+                const hashedPassword = await bcrypt.hash(data.newPassword, 10);
+                const updateRequest = pool.request();
+                updateRequest.input('UserId', id);
+                updateRequest.input('Password', hashedPassword);
+                const updateResult = await updateRequest.query(`
+                    UPDATE Users
+                    SET Password = @Password
+                    WHERE UserId = @UserId
+                `);
+                if (updateResult.rowsAffected > 0) {
+                    return 'Password changed successfully';
+                } else {
+                    return 'Password change failed';
+                }
+            } else {
+                return 'Old password is incorrect';
+            }
+        } else {
+            return 'User not found';
+        }
+    } catch (error) {
+        console.error('Error changing password:', error);
+        throw error;
+    }
+}
 
 // exports.read = async () => {
 //     const pool = await poolPromise;
@@ -214,5 +297,7 @@ const updateUser = async (id, data) => {
 module.exports = {
     createUser,
     loginUser,
-    updateUser
+    updateUser,
+    getDetailsUser,
+    changePassword
 }
