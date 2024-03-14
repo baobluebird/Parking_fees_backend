@@ -11,13 +11,13 @@ const createUser = async (user) => {
         user.password = bcrypt.hashSync(user.password, 10)
         const response = await User.createUser(user)
         if (!response) {
-            reject ({
+            resolve ({
                 status: 'ERR',
                 message: 'Create user failed'
             })
         }
         else if (response === 'Email is already in use') {
-            reject ({
+            resolve ({
                 status: 'ERR',
                 message: 'Email is already in use'
             })

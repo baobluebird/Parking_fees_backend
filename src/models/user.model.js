@@ -44,7 +44,7 @@ const createUser = async (data) => {
         const getUserRequest = pool.request();
         getUserRequest.input('Email', data.email);
         const userResult = await getUserRequest.query(getUserQuery);
-
+        console.log(userResult.recordset[0]);
         if (userResult.recordset.length > 0) {
             return userResult.recordset[0]; // Return the first row (user information)
         } else {

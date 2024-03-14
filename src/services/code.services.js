@@ -53,6 +53,23 @@ const createCode = async (email) => {
     });
   }
 
+  const createTokenEmail = async (email) => {
+    return new Promise(async (resolve, reject) => {
+    try {
+        const access_token = await generalAccessTokenForEmail({
+            email
+        })
+        resolve({
+            access_token,
+            status: 'OK',
+            message: 'Create token email successfully'
+        })
+    } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
   module.exports = {
     createCode,
     checkCode
