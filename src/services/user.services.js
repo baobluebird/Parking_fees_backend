@@ -9,6 +9,7 @@ const createUser = async (user) => {
     return new Promise(async (resolve, reject) => {
     try {
         user.password = bcrypt.hashSync(user.password, 10)
+        user.confirmPassword = user.password 
         const response = await User.createUser(user)
         if (!response) {
             resolve ({
@@ -40,21 +41,21 @@ const loginUser = async (user) => {
     try {
         const response = await User.loginUser(user)
         if (!response) {
-            reject ({
+            resolve ({
                 status: 'ERR',
                 message: 'Login failed'
             })
         }
         else if (response === 'Password not match') {
-            reject ({
+            resolve ({
                 status: 'ERR',
                 message: 'Password not match'
             })
         }
         else if (response === 'User not found') {
-            reject ({
+            resolve ({
                 status: 'ERR',
-                message: 'User not found'
+                message: 'Email not found'
             })
         }
         else {
@@ -64,6 +65,8 @@ const loginUser = async (user) => {
             })
             resolve({
                 id: response?.UserId,
+                name: response?.Username,
+                isAdmin: response?.IsAdmin,
                 access_token,
                 status: 'OK',
                 message: 'Login successfully'
@@ -197,11 +200,35 @@ const changePassword = async (userId, password) => {
     });
   };
 
+const decodeToken = async (token) => {
+    return new Promise(async (resolve, reject) => {
+    try {
+        jwt.verify(token.token, process.env.ACCESS_TOKEN, function(err, user){
+            if(err){
+                resolve ({
+                    status: 'ERR',
+                    message: 'Unauthorized'
+                })
+            }
+            const  {payload} = user
+            resolve({
+                isAdmin: payload?.isAdmin,
+                status: 'OK',
+                message: 'Decode token successfully'
+            })
+        });
+    } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
 module.exports = {
     createUser,
     loginUser,
     getId,
     updateUser,
     getDetailsUser,
-    changePassword
+    changePassword,
+    decodeToken
 }

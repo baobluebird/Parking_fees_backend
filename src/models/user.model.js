@@ -3,13 +3,12 @@ const bcrypt = require('bcrypt');
 
 const createUser = async (data) => {
     try {
-        if (!data || typeof data !== 'object' || !data.name || !data.password || !data.email || !data.address || !data.phone) {
+        if (!data || typeof data !== 'object' || !data.name || !data.date ||!data.password || !data.email || !data.address || !data.phone || !data.licensePlate) {
             throw new Error('Invalid data object or missing properties');
         }
 
         const pool = await poolPromise;
 
-        // Kiểm tra xem địa chỉ email đã tồn tại trong cơ sở dữ liệu chưa
         const checkDuplicateEmailQuery = `
             SELECT UserId
             FROM Users
@@ -24,18 +23,18 @@ const createUser = async (data) => {
 
         const request = pool.request();
         request.input('Username', data.name);
+        request.input('Date', data.date);
         request.input('Password', data.password);
         request.input('Email', data.email);
         request.input('Address', data.address);
         request.input('Phone', data.phone);
+        request.input('licensePlate', data.licensePlate);
 
-        // Thực hiện câu lệnh INSERT
         await request.query(`
-            INSERT INTO Users (Username, Email, Phone, Address, Password)
-            VALUES (@Username, @Email, @Phone, @Address, @Password)
+            INSERT INTO Users (Username, Date, Email, Phone, Address, Password, licensePlate)
+            VALUES (@Username, @Date, @Email, @Phone, @Address, @Password, @licensePlate)
         `);
 
-        // Sau khi thêm, thực hiện truy vấn để lấy thông tin vừa thêm vào
         const getUserQuery = `
             SELECT Username, Email, Phone, Address, IsAdmin
             FROM Users
@@ -46,9 +45,9 @@ const createUser = async (data) => {
         const userResult = await getUserRequest.query(getUserQuery);
         console.log(userResult.recordset[0]);
         if (userResult.recordset.length > 0) {
-            return userResult.recordset[0]; // Return the first row (user information)
+            return userResult.recordset[0]; 
         } else {
-            throw new Error('User creation failed'); // Or handle this case as needed
+            throw new Error('User creation failed'); 
         }
     } catch (error) {
         console.error('Error inserting data:', error);

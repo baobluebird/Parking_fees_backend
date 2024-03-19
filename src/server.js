@@ -9,6 +9,7 @@ const FormData = require('form-data');
 
 const routes = require('./routes/api/api');
 const { poolPromise } = require('./config/connection');
+const Fee = require('./models/fee.model');
 
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -48,14 +49,19 @@ app.post('/api/upload', upload.single('image'), async (req, res) => {
     if (!req.file) {
       return res.status(400).send('No file uploaded.');
     }
-    console.log('File uploaded:', req.file);
-    const { typecar, location, address } = req.body;
+    const { typeCar, location, address, currentDateAndTime, payment } = req.body;
     const imageFileName = req.file.filename;
 
     console.log('File uploaded:', imageFileName);
-    console.log('Type of car:', typecar);
+    console.log('Type of car:', typeCar);
     console.log('Location:', location);
     console.log('Address:', address);
+    // console.log('Time:', timeSelected);
+    console.log('Date and time:', currentDateAndTime);
+    const dateObj = new Date(currentDateAndTime);
+    const sqlDateTime = dateObj.toISOString().slice(0, 23).replace('T', ' ');
+
+    console.log('Payment:', payment);
 
     const formData = new FormData();
     formData.append('image', fs.createReadStream(path.join(uploadDirectory, imageFileName)));
@@ -67,6 +73,14 @@ app.post('/api/upload', upload.single('image'), async (req, res) => {
     });
 
     console.log('Server response:', response.data);
+
+    const licensePlate = response.data.detections;
+    const imageData = req.file;
+
+    const fee = {licensePlate, typeCar, location, address, sqlDateTime, payment, imageData, imageFileName};
+
+    const responseService = await Fee.createFee(fee);
+
     if(response.data.detections === '') {
       return res.status(200).json({ status: 'error', message: 'No car detected' });
     }

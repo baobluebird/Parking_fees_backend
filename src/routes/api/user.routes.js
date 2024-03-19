@@ -11,6 +11,7 @@ router.post('/update-user/:id',authUserMiddleware, userController.updateUser);
 router.get('/get-detail/:id',authUserMiddleware ,userController.getDetailsUser);
 router.post('/change-password/:id', userController.changePassword);
 router.post('/create-token', userController.refreshToken);
+router.post('/send-token', userController.decodeToken)
 
 
 module.exports = router;  

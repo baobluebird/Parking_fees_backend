@@ -3,10 +3,10 @@ const JwtService = require('../services/JwtService');
 
 const createUser = async (req, res) => {
     try {
-        const { name, email, password, confirmPassword, phone } = req.body
+        const { name, date, email, password, confirmPassword, phone, licensePlate } = req.body
         const reg = /^\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$/
         const isCheckEmail = reg.test(email)
-        if (!name || !email || !password || !confirmPassword || !phone) {
+        if (!name ||!date || !email || !password || !confirmPassword || !phone || !licensePlate) {
             return res.status(200).json({
                 status: 'ERR',
                 message: 'The input is required'
@@ -216,6 +216,23 @@ const deleteMany = async (req, res) => {
     }
 }
 
+const decodeToken = async (req, res) => {
+    try {
+        const token = req.body;
+        if(!token){
+            return res.status(200).json({
+                status: 'ERR',
+                message: 'The input is required'
+            })
+        }
+        const response = await UserService.decodeToken(token)
+        return res.status(200).json(response)
+    } catch (e) {
+        return res.status(404).json({ 
+            message: e
+        })
+    }
+}
 
 
 
@@ -232,4 +249,5 @@ module.exports = {
     refreshToken,
     deleteMany,
     getDetailsUserWithCart,
+    decodeToken
 }
