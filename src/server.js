@@ -33,6 +33,32 @@ if (!fs.existsSync(uploadDirectory)) {
   fs.mkdirSync(uploadDirectory);
 }
 
+function readFileAsBuffer(filePath) {
+  return new Promise((resolve, reject) => {
+    fs.readFile(filePath, (err, data) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(data);
+      }
+    });
+  });
+}
+
+async function getFileData(filePath) {
+  try {
+    const fileData = await readFileAsBuffer(filePath);
+    const contentType = 'application/octet-stream'; 
+    return {
+      data: fileData,
+      contentType: contentType
+    };
+  } catch (error) {
+    console.error('Error reading file:', error);
+    throw error;
+  }
+}
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, uploadDirectory);
@@ -41,23 +67,40 @@ const storage = multer.diskStorage({
     cb(null, file.originalname);
   }
 });
-const upload = multer({ storage: storage });
+const storageUp = multer.memoryStorage();
 
+const upload = multer({ storage: storage });
 
 app.post('/api/upload', upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).send('No file uploaded.');
     }
+    const image = req.file;
+    console.log('File uploaded:', image.path);
+    getFileData(image.path)
+  .then(fileData => {
+    console.log('File data:', fileData);
+    // Tiếp tục xử lý dữ liệu ở đây
+  })
+  .catch(error => {
+    console.error('Error:', error);
+  });
+    // const image = {
+    //   data: req.file.buffer,
+    //   contentType: req.file.mimetype
+    // };
+
     const { typeCar, location, address, currentDateAndTime, payment } = req.body;
     const imageFileName = req.file.filename;
 
-    console.log('File uploaded:', imageFileName);
+    console.log('File uploaded:', imageFileName); 
     console.log('Type of car:', typeCar);
     console.log('Location:', location);
-    console.log('Address:', address);
-    // console.log('Time:', timeSelected);
+    console.log('Address:', address); 
     console.log('Date and time:', currentDateAndTime);
+
+
     const dateObj = new Date(currentDateAndTime);
     const sqlDateTime = dateObj.toISOString().slice(0, 23).replace('T', ' ');
 
@@ -74,17 +117,16 @@ app.post('/api/upload', upload.single('image'), async (req, res) => {
 
     console.log('Server response:', response.data);
 
-    const licensePlate = response.data.detections;
-    const imageData = req.file;
+    // const licensePlate = response.data.detections;
 
-    const fee = {licensePlate, typeCar, location, address, sqlDateTime, payment, imageData, imageFileName};
+    // const fee = {licensePlate, typeCar, location, address, sqlDateTime, payment, image};
 
-    const responseService = await Fee.createFee(fee);
+    // const responseService = await Fee.createFee(fee);
 
-    if(response.data.detections === '') {
-      return res.status(200).json({ status: 'error', message: 'No car detected' });
-    }
-    res.status(200).json({ status: 'success', message: 'Upload successfully' });
+    // if(response.data.detections === '') {
+    //   return res.status(200).json({ status: 'ERROR', message: 'No car detected' });
+    // }
+    // res.status(200).json(responseService);
   } catch (error) {
     console.error('Error:', error);
     res.status(500).send('Server error.');
