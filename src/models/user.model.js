@@ -30,11 +30,24 @@ const createUser = async (data) => {
         request.input('Phone', data.phone);
         request.input('licensePlate', data.licensePlate);
 
-        await request.query(`
+        const Fees = await pool
+        .request()
+        .input("LicensePlate", data.licensePlate)
+        .query("SELECT UserId FROM Fees WHERE LicensePlate = @LicensePlate");
+        if(Fees.recordset[0] !== undefined){
+            const UserId = Fees.recordset[0].UserId;
+            request.input('UserId', UserId);
+            await request.query(`
+            INSERT INTO Users (UserId, Username, Date, Email, Phone, Address, Password, licensePlate)
+            VALUES (@UserId, @Username, @Date, @Email, @Phone, @Address, @Password, @licensePlate)
+        `);
+        }else{
+            console.log("chua co");
+            await request.query(`
             INSERT INTO Users (Username, Date, Email, Phone, Address, Password, licensePlate)
             VALUES (@Username, @Date, @Email, @Phone, @Address, @Password, @licensePlate)
         `);
-
+        }
         const getUserQuery = `
             SELECT Username, Email, Phone, Address, IsAdmin
             FROM Users
@@ -93,7 +106,7 @@ const loginUser = async (data) => {
 const updateUser = async (id, data) => {
     try {
         if (!id || !data || typeof data !== 'object') {
-            throw new Error('Invalid data object or missing properties');
+            throw new Error('Invalid data object or missing properties'); 
         }
 
         const pool = await poolPromise;

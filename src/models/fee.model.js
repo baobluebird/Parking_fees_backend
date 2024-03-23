@@ -1,6 +1,13 @@
 const { poolPromise } = require("../config/connection");
 const fs = require("fs");
 const geolib = require("geolib");
+const uuid = require('uuid');
+function createId() {
+  const newId = {
+      id: uuid.v4(),
+  };
+  return newId;
+}
 
 function setPriceForTypeCar(typeCar) {
   if (typeCar === "Xe ô tô dưới 16 chỗ, xe tải dưới 2,5 tấn") {
@@ -155,7 +162,7 @@ const createFee = async (fee) => {
           request.input("AddressParking", fee.address);
           request.input("IsPayment", fee.payment);
           request.input("ImageData", fee.image.data);
-          request.input("ContentType", fee.image.ContentType);
+          request.input("ContentType", fee.image.contentType);
           request.input("Price", setPrice);
           request.input("BillId", Bills.BillId);
           await request.query(
@@ -167,12 +174,13 @@ const createFee = async (fee) => {
           const UpdateBill = await pool
             .request()
             .input("BillId", Bills.BillId)
-            .query("SELECT BillId FROM Bills WHERE BillId = @BillId");
+            .query("SELECT BillId, Location, AddressParking, IsPayment, ImageData, ContentType, Price, CreatedAt, UpdatedAt FROM Bills WHERE BillId = @BillId");
 
           if (UpdateBill.recordset[0] !== undefined) {
             resolve({
               status: "OK",
               data: UpdateBill.recordset[0],
+              licensePlate: fee.licensePlate,
               message: "Cập nhật Bill thành công",
             });
           } else {
@@ -192,7 +200,7 @@ const createFee = async (fee) => {
           request.input("AddressParking", fee.address);
           request.input("IsPayment", fee.payment);
           request.input("ImageData", fee.image.data);
-          request.input("ContentType", fee.image.ContentType);
+          request.input("ContentType", fee.image.contentType);
           request.input("Price", setPrice);
           request.input("FeeId", Fees.recordset[0].FeeId);
           const resultCreateBill = await request.query(
@@ -210,6 +218,7 @@ const createFee = async (fee) => {
             resolve({
               status: "OK",
               data: resultSelectBill.recordset[0],
+              licensePlate: fee.licensePlate,
               message: "Tạo mới Bill thành công",
             });
           }
@@ -221,11 +230,19 @@ const createFee = async (fee) => {
           }
         }
       } else {
+        console.log("Tạo mới Fee và Bill");
         const setPrice = setPriceForTypeCar(fee.typeCar);
 
         const request = pool.request();
-
-        request.input("UserId", Users.recordset[0].UserId);
+        var userId
+        console.log(Users.recordset[0])
+        if(Users.recordset[0] !== undefined){
+          userId = Users.recordset[0].UserId
+        }else{
+          userId = createId().id
+        }
+        console.log(userId)
+        request.input("UserId", userId);
         request.input("LicensePlate", fee.licensePlate);
         request.input("TypeCar", fee.typeCar);
 
@@ -242,13 +259,12 @@ const createFee = async (fee) => {
         const getFeeRequest = pool.request();
         getFeeRequest.input("LicensePlate", fee.licensePlate);
         const feeResult = await getFeeRequest.query(getFeeQuery);
-        console.log("Fee",fee );
         request.input("FeeId", feeResult.recordset[0].FeeId);
         request.input("Location", fee.location);
         request.input("AddressParking", fee.address);
         request.input("IsPayment", fee.payment);
         request.input("ImageData", fee.image.data);
-        request.input("ContentType", fee.image.ContentType);
+        request.input("ContentType", fee.image.contentType);
         request.input("Price", setPrice);
 
         const resultNewBillFromFee = await request.query(
@@ -265,7 +281,8 @@ const createFee = async (fee) => {
           resolve({
             status: "OK",
             data: resultSelectBill.recordset[0],
-            message: "Tạo mới Bill từ Fee thành công",
+            licensePlate: fee.licensePlate,
+            message: "Tạo mới Bill từ Fee thành công", 
           });
         } else {
           reject({

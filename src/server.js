@@ -76,20 +76,9 @@ app.post('/api/upload', upload.single('image'), async (req, res) => {
     if (!req.file) {
       return res.status(400).send('No file uploaded.');
     }
-    const image = req.file;
-    console.log('File uploaded:', image.path);
-    getFileData(image.path)
-  .then(fileData => {
-    console.log('File data:', fileData);
-    // Tiếp tục xử lý dữ liệu ở đây
-  })
-  .catch(error => {
-    console.error('Error:', error);
-  });
-    // const image = {
-    //   data: req.file.buffer,
-    //   contentType: req.file.mimetype
-    // };
+    const imageData = req.file;
+    console.log('File uploaded:', imageData.path);
+    const image = await getFileData(imageData.path)
 
     const { typeCar, location, address, currentDateAndTime, payment } = req.body;
     const imageFileName = req.file.filename;
@@ -117,16 +106,16 @@ app.post('/api/upload', upload.single('image'), async (req, res) => {
 
     console.log('Server response:', response.data);
 
-    // const licensePlate = response.data.detections;
+    const licensePlate = response.data.detections;
 
-    // const fee = {licensePlate, typeCar, location, address, sqlDateTime, payment, image};
+    const fee = {licensePlate, typeCar, location, address, sqlDateTime, payment, image};
 
-    // const responseService = await Fee.createFee(fee);
+    const responseService = await Fee.createFee(fee);
 
-    // if(response.data.detections === '') {
-    //   return res.status(200).json({ status: 'ERROR', message: 'No car detected' });
-    // }
-    // res.status(200).json(responseService);
+    if(response.data.detections === '') {
+      return res.status(200).json({ status: 'ERROR', message: 'No car detected' });
+    }
+    res.status(200).json(responseService);
   } catch (error) {
     console.error('Error:', error);
     res.status(500).send('Server error.');
